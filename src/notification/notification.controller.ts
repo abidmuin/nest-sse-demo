@@ -6,6 +6,8 @@ import {
   Param,
   Patch,
   Post,
+  Res,
+  Sse,
 } from '@nestjs/common';
 import { NotificationService } from './notification.service';
 import { CreateNotificationDto } from './dto/create-notification.dto';
@@ -17,6 +19,10 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Notification } from './entities/notification.entity';
+import { interval, map, Observable } from 'rxjs';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+import { Response } from 'express';
 
 @ApiBearerAuth()
 @ApiTags('notification')
@@ -34,9 +40,9 @@ export class NotificationController {
     return this.notificationService.create(createNotificationDto);
   }
 
-  @Get() findAll() {
-    return this.notificationService.findAll();
-  }
+  // @Get() findAll() {
+  //   return this.notificationService.findAll();
+  // }
 
   @Get(':id')
   @ApiResponse({
@@ -58,5 +64,18 @@ export class NotificationController {
 
   @Delete(':id') remove(@Param('id') id: string) {
     return this.notificationService.remove(+id);
+  }
+
+  // SSE
+  @Get() index(@Res() response: Response) {
+    response
+      .type('text/html')
+      .send(readFileSync(join(__dirname, 'index.html')).toString());
+  }
+
+  @Sse('sse') sse(): Observable<MessageEvent> {
+    return interval(1000).pipe(
+      map((_) => ({ data: { hello: 'world' } }) as MessageEvent),
+    );
   }
 }
